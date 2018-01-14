@@ -20,8 +20,6 @@ For each `id` in the test set, you must predict a probability for each of the si
 **Group name candidates:**  
 
 - **Phantom Brigade** 
-- **Akatsuki**
-- **点金**
 
 **Group Rule:**
 
