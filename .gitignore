@@ -3,6 +3,7 @@ sandbox*.py
 
 # Data for TensorFlow
 data/
+input/
 inception/
 vgg16/
 checkpoints/
@@ -29,7 +30,6 @@ __pycache__/
 
 # For other big data file
 *.csv
-*.txt
 feats/
 output/
 
