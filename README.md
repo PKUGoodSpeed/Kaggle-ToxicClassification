@@ -29,4 +29,6 @@ For each `id` in the test set, you must predict a probability for each of the si
 4. **All the datasets must be moved to a folder with name "data"**
 5. **All the executable files must be moved to a folder with name "apps”**
 
+**[Discussion paper](https://paper.dropbox.com/doc/New-Ideas-Post-here-bIBrgHTcmLzXW3iNS7OiS)**
+
 
