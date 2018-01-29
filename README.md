@@ -31,6 +31,6 @@ For each `id` in the test set, you must predict a probability for each of the si
 
 **[Discussion paper](https://paper.dropbox.com/doc/New-Ideas-Post-here-bIBrgHTcmLzXW3iNS7OiS)**
 
-**[Word2Vec pretrained models](http://ahogrammer.com/2017/01/20/the-list-of-pretrained-word-embeddings/)
+**[Word2Vec pretrained models](http://ahogrammer.com/2017/01/20/the-list-of-pretrained-word-embeddings/)**
 
 
