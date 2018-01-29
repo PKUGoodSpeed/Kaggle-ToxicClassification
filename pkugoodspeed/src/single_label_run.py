@@ -24,7 +24,7 @@ if __name__ == '__main__':
     model = single.getSequentialModel(cfg['layers'])
     model.summary()
     res = single.trainModel(model, cfg['train_args'])
-    plot.plotResult(res)
+    plot.plotResult(res, filename=cfg['fig_file'])
     
     
     
