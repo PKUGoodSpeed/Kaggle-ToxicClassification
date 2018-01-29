@@ -12,12 +12,6 @@ import pandas as pd
 import scipy
 from scipy.sparse import csr_matrix, hstack
 
-## Visualization
-import matplotlib.pyplot as plt
-plt.switch_backend('agg')
-from IPython.display import display
-import seaborn as sns
-
 ## Traditional Machine Learning
 from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.model_selection import train_test_split, cross_val_score
@@ -127,6 +121,8 @@ class SingleLabelModel:
         return Model(input_layer, output_layer)
         
     def trainModel(self, model, args):
+        global learning_rate
+        global decay_rate
         assert args['optimizer'] in optmap, "Wrong optimizer name"
         learning_rate = args['learning_rate']
         decay_rate = args['decay_rate']
@@ -138,7 +134,7 @@ class SingleLabelModel:
             global decay_rate
             if epoch%adaptive_step == 0:
                 learning_rate *= decay_rate
-            print("CURRENT LEARNING RATE = " + str(learning_rate))
+                print("CURRENT LEARNING RATE = " + str(learning_rate))
             return learning_rate
         change_lr = LearningRateScheduler(scheduler)
         
