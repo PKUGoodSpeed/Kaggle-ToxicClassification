@@ -5,13 +5,15 @@ from models import SingleLabelModel
 import plot
 import pandas as pd
 import json
+import parse_opts
 
 if __name__ == '__main__':
-    train = pd.read_csv('../data/train_processed.csv')
-    test = pd.read_csv('../data/train_processed.csv')
+    train_data_file, test_data_file, config_file = parse_opts.getopts()
+    train = pd.read_csv(train_data_file)
+    test = pd.read_csv(test_data_file)
     
     ## Read From Config file
-    cfg = json.load(open('cfgs/cnn.cfg'))
+    cfg = json.load(open(config_file))
     print cfg
     
     target = cfg["target"]
