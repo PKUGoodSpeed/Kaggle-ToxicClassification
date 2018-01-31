@@ -1,16 +1,10 @@
 '''
-keras models are loaded from here
-rnn, cnn or combined ones
+Constructing keras models
 '''
-
-## system
-import os
-
 ## Math and dataFrame
 import numpy as np
 import pandas as pd
-import scipy
-from scipy.sparse import csr_matrix, hstack
+import plot
 
 ## Traditional Machine Learning
 from sklearn.linear_model import Ridge, LogisticRegression
@@ -19,137 +13,127 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.preprocessing import LabelBinarizer
 
 ## Keras
-from keras.layers import Input, Dropout, Dense, BatchNormalization, Activation, concatenate
-from keras.layers import Embedding, Flatten, Conv1D, Conv2D, GRU, LSTM, SimpleRNN, MaxPooling1D
 from keras.models import Model, Sequential
-from keras.callbacks import ModelCheckpoint, Callback, EarlyStopping#, TensorBoard
-from keras import backend as K
-from keras import optimizers
-from keras.optimizers import SGD
-from keras import initializers
-from keras.callbacks import LearningRateScheduler
-from keras.utils import np_utils
-from keras.preprocessing.sequence import pad_sequences
-from keras.preprocessing.text import Tokenizer
+from keras.optimizers import SGD, Adam
+from keras.callbacks import LearningRateScheduler, Callback
+from keras.layers import Embedding, Flatten, Conv1D, Conv2D, GRU, LSTM, SimpleRNN, MaxPooling1D
+from keras.layers import Input, Dropout, Dense, BatchNormalization, Activation, concatenate
+from keras.layers import GlobalMaxPooling1D, GlobalAveragePooling1D, AveragePooling1D
 
-LABELS = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
-VECTORIZOR = ['embedding', 'word2vec']
+## Select keras layer via config input
 layermap = {
     'embedding': Embedding,
-    'dense': Dense,
+    'flatten': Flatten,
     'conv': Conv1D,
+    'conv2d': Conv2D,
     'gru': GRU,
     'lstm': LSTM,
     'simplernn': SimpleRNN,
-    'flatten': Flatten,
+    'dense': Dense,
     'dropout': Dropout,
+    'batchnorm': BatchNormalization,
     'activation': Activation,
-    'maxpooling': MaxPooling1D
+    'maxpooling': MaxPooling1D,
+    'avepooling': AveragePooling1D,
+    'globalmaxpooling': GlobalMaxPooling1D,
+    'globalavepooling': GlobalAveragePooling1D
 }
-learning_rate = 1.0
-decay_rate = 1.0
 
+## Select keras optimizor via config input
 optmap = {
-    'sgd': SGD
+    'sgd': SGD,
+    'adam': Adam
 }
 
-# Make training data set be more balanced
-def _makeBalance(df, target_label):
-    L = len(df)
-    minor = df[df[target_label] != 0]
-    while len(df) < 2*L:
-        df = df.append(minor, ignore_index=True)
-    return df
-    
+## Model type list
+model_type_list = ['sequential', 'parallel']
 
+## Global learning rate
+global_learning_rate = 1.0
+
+## Glabal learning rate decay
+global_decay_rate = 1.0
     
-class SingleLabelModel:
-    _target = None      ## Which label to train
-    _padlength = None   ## padlength
-    _vectorize = None   ## which type of vectorization to use
-    _splitratio = None  ## train/ train + cv
-    _train = None       ## train set
-    _cv = None          ## cross validation set
-    _test = None        ## test set
-    _inshape = None     ## Input shape
+## The model class
+class KerasModel:
+    _input_shape = None         ## Input Shape
+    _output_dim = None          ## Output dimension
+    _model = None               ## keras model object
+    _history = None             ## Plotting Use
     
-    def __init__(self, target='toxic', padlength=150, vectorize='embedding', splitratio=0.7):
-        self._target = target
-        assert self._target in LABELS, "Target does not exist"
-        self._padlength = padlength
-        self._vectorize = vectorize
-        assert self._vectorize in VECTORIZOR, "Vectorizor approach does not exist"
-        self._splitratio = splitratio
-        assert self._splitratio > 0.5 and self._splitratio <= 1, "Wrong split ratio"
+    def __init__(self, input_shape, output_dim):
+        '''
+        Here we only need input shape and output dimension
+        '''
+        self._input_shape = input_shape
+        self._output_dim = output_dim
         
-    def _loadDataEmb(self, train, test):
-        '''loading data for embedding case'''
-        print("Text to seq process...")
-        print("   Fitting tokenizer...")
-        raw_text = np.hstack([train.comment_text.str.lower(), test.comment_text.str.lower()])
-        tok_raw = Tokenizer()
-        tok_raw.fit_on_texts(raw_text)
-        print("   Transforming text to seq...")
-        train["input"] = tok_raw.texts_to_sequences(train.comment_text.str.lower())
-        test["input"] = tok_raw.texts_to_sequences(test.comment_text.str.lower())
-        self._train, self._cv = train_test_split(train[['input', self._target]], train_size=self._splitratio)
-        self._train = _makeBalance(self._train, self._target)
-        self._cv = _makeBalance(self._cv, self._target)
-        self._test = test
-        self._inshape = (self._padlength, )
-
-    
-    def loadData(self, train, test):
-        if self._vectorize == 'embedding':
-            self._loadDataEmb(train, test)
-        else:
-            self._loadDataEmb(train, test)
-            
-    
-    def getSequentialModel(self, layers):
-        input_layer = Input(shape=self._inshape, name='input')
+    def _buildSequModel(self, layer_list):
+        '''Building a sequential model'''
+        input_layer = Input(shape=self._input_shape, name='input')
         tmp = input_layer
-        for l in layers:
-            assert l['name'] in layermap.keys(), "Wrong layer name"
-            print l['name']
-            if l['name'] == 'conv':
-                tmp = layermap[l['name']](l['filters'], l['ksize'], activation=l['actv'], padding=l['pad']) (tmp)
-            else:
-                tmp = layermap[l['name']](*l['args']) (tmp)
-        
-        output_layer = Dense(2, activation='softmax') (tmp)
-        return Model(input_layer, output_layer)
-        
-    def trainModel(self, model, args):
-        global learning_rate
-        global decay_rate
-        assert args['optimizer'] in optmap, "Wrong optimizer name"
-        learning_rate = args['learning_rate']
-        decay_rate = args['decay_rate']
-        N_epoch = args['epoch']
-        adaptive_step = args['adaptive_step']
+        for layer in layer_list:
+            assert layer['name'] in layermap, "Layer {0} does not exist, you can invent one :)".format(layer['name'])
+            tmp = layermap[layer['name']](*layer['args'], **layer['kargs'])
+        output_layer = Dense(self._output_dim, activation='sigmoid') (tmp)
+        self._model = Model(input_layer, output_layer)
+    
+    def _buildParaModel(self, layer_stack, combined_args):
+        '''Building a parallel model'''
+        assert len(layer_stack) >= 2, "You need at least 2 layer sequences to make parallel."
+        for layer_seq in layer_stack:
+            n = len(layer_seq)
+            assert n, "Existing empty layer sequence(s)."
+            assert layer_seq[n-1]['name'] == 'dense', "All layer sequences should end at a dense layer."
+        output_layers = []
+        for layer_seq in layer_stack:
+            tmp = input_layer
+            for layer in layer_seq:
+                assert layer['name'] in layermap, "Layer {0} does not exist, you can invent one :)".format(layer['name'])
+                tmp = layermap[layer['name']](*layer['args'], **layer['kargs'])
+            output_layers.append(tmp)
+        main_layer = concatenate(output_layers)
+        for layer in combined_args:
+            main_layer = Dense(*layer['args'], **layer['kargs'])
+        output_layer = Dense(self._output_dim, activation='sigmoid') (main_layer)
+        self._model = Model(input_layer, output_layer)
+    
+    def getModel(self, model_type, *args):
+        '''Getting the model'''
+        assert model_type in model_type_list, "Wrong model type, should be \"sequential\" or \"parallel\"."
+        if model_type == 'sequential':
+            self._buildSequModel(*args)
+        else:
+            self._buildParaModel(*args)
+        return self._model
+
+    def train(self, train_x, train_y, valid_x, valid_y, optimizer='sgd', learning_rate=0.02, 
+    decay_rate=0.85, epochs=36, adaptive_step=2, loss='binary_crossentropy', metrics=None):
+        global global_learning_rate
+        global global_decay_rate
+        global_learning_rate = learning_rate
+        global_decay_rate = decay_rate
+        assert optimizer in optmap, "Wrong optimizer name"
         ## Using adaptive decaying learning rate
         def scheduler(epoch):
-            global learning_rate
-            global decay_rate
+            global global_learning_rate
+            global global_decay_rate
             if epoch%adaptive_step == 0:
-                learning_rate *= decay_rate
-                print("CURRENT LEARNING RATE = " + str(learning_rate))
-            return learning_rate
+                global_learning_rate *= global_decay_rate
+                print("CURRENT LEARNING RATE = " + str(global_learning_rate))
+            return global_learning_rate
         change_lr = LearningRateScheduler(scheduler)
+
+        ## Compile the model
+        self._model.compile(optimizer=optmap[optimizer](learning_rate), loss=loss, metrics=metrics)
         
-        optimizer = optmap[args['optimizer']](learning_rate)
-        loss = 'categorical_crossentropy'
-        metrics = ['accuracy']
-        model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
-        
-        train_x = pad_sequences(self._train.input, maxlen=self._padlength)
-        cv_x = pad_sequences(self._cv.input, maxlen=self._padlength)
-        train_y = np_utils.to_categorical(self._train.toxic.values, 2)
-        cv_y = np_utils.to_categorical(self._cv.toxic.values, 2)
-        
-        return model.fit(train_x, train_y, batch_size = 128, epochs = N_epoch,
-        verbose = 1, validation_data = (cv_x, cv_y), callbacks=[change_lr])
+        self._history = self._model.fit(train_x, train_y, batch_size=128, epochs=epochs,
+        verbose=1, validation_data=(valid_x, valid_y), callbacks=[change_lr])
+        return self._history
+    
+    def plot(self, filename='convergence.png'):
+        '''Plot the convergence behavior'''
+        plot.plotResult(self._history, filename=filename)
     
     
     
