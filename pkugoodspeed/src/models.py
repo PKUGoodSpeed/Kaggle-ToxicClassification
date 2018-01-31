@@ -74,8 +74,10 @@ class KerasModel:
         tmp = input_layer
         for layer in layer_list:
             assert layer['name'] in layermap, "Layer {0} does not exist, you can invent one :)".format(layer['name'])
-            tmp = layermap[layer['name']](*layer['args'], **layer['kargs'])
+            tmp = layermap[layer['name']](*layer['args'], **layer['kargs']) (tmp)
+        print self._output_dim
         output_layer = Dense(self._output_dim, activation='sigmoid') (tmp)
+        print "Finish loading layers."
         self._model = Model(input_layer, output_layer)
     
     def _buildParaModel(self, layer_stack, combined_args):
@@ -90,21 +92,22 @@ class KerasModel:
             tmp = input_layer
             for layer in layer_seq:
                 assert layer['name'] in layermap, "Layer {0} does not exist, you can invent one :)".format(layer['name'])
-                tmp = layermap[layer['name']](*layer['args'], **layer['kargs'])
+                tmp = layermap[layer['name']](*layer['args'], **layer['kargs']) (tmp)
             output_layers.append(tmp)
         main_layer = concatenate(output_layers)
         for layer in combined_args:
-            main_layer = Dense(*layer['args'], **layer['kargs'])
+            main_layer = Dense(*layer['args'], **layer['kargs']) (main_layer)
         output_layer = Dense(self._output_dim, activation='sigmoid') (main_layer)
+        print "Finish loading layers."
         self._model = Model(input_layer, output_layer)
     
-    def getModel(self, model_type, *args):
+    def getModel(self, model_type, **kargs):
         '''Getting the model'''
         assert model_type in model_type_list, "Wrong model type, should be \"sequential\" or \"parallel\"."
         if model_type == 'sequential':
-            self._buildSequModel(*args)
+            self._buildSequModel(**kargs)
         else:
-            self._buildParaModel(*args)
+            self._buildParaModel(**kargs)
         return self._model
 
     def train(self, train_x, train_y, valid_x, valid_y, optimizer='sgd', learning_rate=0.02, 
