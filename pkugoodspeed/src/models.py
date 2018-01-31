@@ -137,6 +137,3 @@ class KerasModel:
     def plot(self, filename='convergence.png'):
         '''Plot the convergence behavior'''
         plot.plotResult(self._history, filename=filename)
-    
-    
-    

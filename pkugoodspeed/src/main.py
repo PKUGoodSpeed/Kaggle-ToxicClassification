@@ -29,3 +29,6 @@ if __name__ == '__main__':
     model = keras_model.getModel(model_kargs["model_type"], **model_kargs["kargs"])
     model.summary()
     history = keras_model.train(train_x, train_y, valid_x, valid_y, **cfg["train_kargs"])
+    
+    output_file="(0)_{1}_convergence.png".format(cfg['model_name'], '.'.join(cfg["preprc_kargs"]["target_list"]))
+    keras_model.plot(cfg['output_dir'] + '/' + output_file)

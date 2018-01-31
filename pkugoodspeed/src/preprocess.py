@@ -40,5 +40,3 @@ def embProcess(train_df, test_df, target_list=['toxic'], split_ratio=0.7, expand
     valid_y = valid[target_list].values
     test_df['input'] = list(pad_sequences(test_df.seq, maxlen=padlength))
     return train_x, train_y, valid_x, valid_y, test_df[['id','input']]
-    
-    
