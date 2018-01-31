@@ -31,7 +31,6 @@ __pycache__/
 # For other big data file
 *.csv
 feats/
-output/
 
 # Executables
 apps/
