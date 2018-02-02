@@ -33,4 +33,6 @@ For each `id` in the test set, you must predict a probability for each of the si
 
 **[Word2Vec pretrained models](http://ahogrammer.com/2017/01/20/the-list-of-pretrained-word-embeddings/)**
 
+**[Google Colab free GPU tutorial](https://medium.com/deep-learning-turkey/google-colab-free-gpu-tutorial-e113627b9f5d)**
+
 
