@@ -17,6 +17,7 @@ ref = "1234567890qwertyuiopasdfghjklzxcvbnm "
 def _process(sent):
     return ''.join([c for c in sent if c in ref])
 def get_key_sentences(path):
+    extra_sent = []
     for f in os.listdir(path):
         if f[-3:] == 'txt':
             fp = open(path + '/' + f, 'r')
