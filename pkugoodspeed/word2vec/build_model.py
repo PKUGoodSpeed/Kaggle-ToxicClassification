@@ -8,7 +8,7 @@ sys.path.append("../src")
 import gensim
 from gensim.models import Word2Vec
 ## multithreading
-from multithreading import Pool
+from multiprocessing import Pool
 
 ref = "1234567890qwertyuiopasdfghjklzxcvbnm "
 def _process(sent):
