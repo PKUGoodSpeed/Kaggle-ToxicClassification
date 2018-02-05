@@ -9,6 +9,7 @@ import gensim
 from gensim.models import Word2Vec
 ## multithreading
 from multiprocessing import Pool
+import opts_parser
 
 ref = "1234567890qwertyuiopasdfghjklzxcvbnm "
 def _process(sent):
