@@ -9,7 +9,9 @@ import gensim
 from gensim.models import Word2Vec
 ## multithreading
 from multiprocessing import Pool
+## parameter parser
 import opts_parser
+import json
 
 ref = "1234567890qwertyuiopasdfghjklzxcvbnm "
 def _process(sent):
