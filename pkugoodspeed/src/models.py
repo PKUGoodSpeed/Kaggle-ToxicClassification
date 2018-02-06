@@ -19,6 +19,7 @@ from keras.callbacks import LearningRateScheduler, Callback
 from keras.layers import Embedding, Flatten, Conv1D, Conv2D, GRU, LSTM, SimpleRNN, MaxPooling1D
 from keras.layers import Input, Dropout, Dense, BatchNormalization, Activation, concatenate
 from keras.layers import GlobalMaxPooling1D, GlobalAveragePooling1D, AveragePooling1D
+from keras.layers import Bidirectional
 
 ## Select keras layer via config input
 layermap = {
@@ -68,14 +69,20 @@ class KerasModel:
         self._input_shape = input_shape
         self._output_dim = output_dim
         
-    def _buildSequModel(self, layer_list):
+    def _buildSequModel(self, layer_list, max_features=20000, emb_size=100, emb_weights=None, bidirect=False):
         '''Building a sequential model'''
         input_layer = Input(shape=self._input_shape, name='input')
         tmp = input_layer
+        if emb_weights is None:
+            tmp = Embedding(max_features, emb_size) (tmp)
+        else:
+            tmp = Embedding(max_features, emb_size, weights=[emb_weights]) (tmp)
         for layer in layer_list:
             assert layer['name'] in layermap, "Layer {0} does not exist, you can invent one :)".format(layer['name'])
-            tmp = layermap[layer['name']](*layer['args'], **layer['kargs']) (tmp)
-        print self._output_dim
+            if bidirect and layer['name'] in ['lstm', 'gru']:
+                tmp = Bidirectional(layermap[layer['name']](*layer['args'], **layer['kargs'])) (tmp)
+            else:
+                tmp = layermap[layer['name']](*layer['args'], **layer['kargs']) (tmp)
         output_layer = Dense(self._output_dim, activation='sigmoid') (tmp)
         print "Finish loading layers."
         self._model = Model(input_layer, output_layer)
