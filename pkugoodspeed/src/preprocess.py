@@ -22,7 +22,7 @@ def _makeBalance(df, target_list, expand_ratio=2.):
     return df
 
 def embProcess(train_df, test_df, target_list=['toxic'], split_ratio=0.7, expand_ratio = 1.5, 
-    padlength=150, max_features=40000, emb_size=100, embeddings_index=None):
+    padlength=150, max_features=40000, emb_size=100, embedding_index=None):
     '''loading data for embedding case'''
     print("Text to seq process...")
     print("   Fitting tokenizer...")
@@ -43,14 +43,16 @@ def embProcess(train_df, test_df, target_list=['toxic'], split_ratio=0.7, expand
     
     ### Build embedding matrix
     embedding_matrix = None
-    if embeddings_index is not None:
-        all_embs = np.stack(embeddings_index.values())
+    if embedding_index is not None:
+        print "Getting embedding_matrix..."
+        all_embs = np.stack(embedding_index.values())
         emb_mean, emb_std = all_embs.mean(), all_embs.std()
-        word_index = tokenizer.word_index
+        word_index = tok_raw.word_index
         nb_words = min(max_features, len(word_index))
-        embedding_matrix = np.random.normal(emb_mean, emb_std, (nb_words, embed_size))
+        embedding_matrix = np.random.normal(emb_mean, emb_std, (nb_words, emb_size))
         for word, i in word_index.items():
-            embedding_vector = embeddings_index.get(word)
+            if i >= max_features: continue
+            embedding_vector = embedding_index.get(word)
             if embedding_vector is not None: 
                 embedding_matrix[i] = embedding_vector
     return train_x, train_y, valid_x, valid_y, test_df[['id','input']], embedding_matrix
