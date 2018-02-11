@@ -7,6 +7,7 @@ from models import KerasModel
 import opts_parser
 import preprocess
 from embedding import *
+from predict import make_predict
 
 if __name__ == '__main__':
     train_data_file, test_data_file, config_file = opts_parser.getopts()
@@ -46,3 +47,10 @@ if __name__ == '__main__':
     
     output_file="{0}_{1}_convergence.png".format(cfg['model_name'], '.'.join(cfg["preprc_kargs"]["target_list"]))
     keras_model.plot(cfg['output_dir'] + '/' + output_file)
+
+    target_list = preprc_kargs['target_list']
+    for target in target_list:
+        test = make_predict(model, test, target)
+
+    test = test[['id'] + target_list]
+    test.to_csv("test.csv", index=False)
