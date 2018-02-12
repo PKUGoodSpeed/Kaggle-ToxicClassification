@@ -67,7 +67,7 @@ def dump_to_file(word_index, model, filename):
         if w in model.wv.vocab:
             embedding_index[w] = model.wv[w]
     
-    fp = open(filename)
+    fp = open(filename, 'w')
     for word, vec in embedding_index.items():
         fp.write(word)
         for x in vec:
