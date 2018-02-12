@@ -52,7 +52,7 @@ def _get_emb_from_file(model_file, binary=False):
     return gensim.models.KeyedVectors.load_word2vec_format(model_file, binary=binary)
 def _get_emb_from_train(sentences, emb_size=100, window=5, min_count=1, workers=4):
     return Word2Vec(sentences, size=emb_size, window=window, min_count=min_count, workers=workers)
-def get_emb(emb_type='generate', kargs):
+def get_emb(emb_type, kargs):
     if emb_type == 'generate':
         return _get_emb_from_train(**kargs)
     else:
