@@ -64,7 +64,7 @@ def dump_to_file(word_index, model, filename):
     print("Writing embedding to {0} ...".format(filename))
     embedding_index = {}
     for w in word_index.keys():
-        if w in model.vocab:
+        if w in model.wv.vocab:
             embedding_index[w] = model.wv[w]
     
     fp = open(filename)
