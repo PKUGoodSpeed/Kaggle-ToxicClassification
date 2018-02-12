@@ -98,6 +98,6 @@ if __name__ == '__main__':
         kargs["sentences"] = train_sents+test_sents+key_sents
         assert cfg["emb_size"] == kargs["emb_size"]
 
-    model = get_emb(emb_type=cfg["emb_type"], kargs)
+    model = get_emb(cfg["emb_type"], kargs)
     filename = cfg["output_dir"] + "/{0}.{1}.txt".format(cfg["emb_type"], str(cfg["emb_size"]))
     dump_to_file(word_index, model, cfg["output_emb_file"])
