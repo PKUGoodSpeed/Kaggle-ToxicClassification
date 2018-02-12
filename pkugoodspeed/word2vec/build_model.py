@@ -53,6 +53,7 @@ def _get_emb_from_file(model_file, binary=False):
 def _get_emb_from_train(sentences, emb_size=100, window=5, min_count=1, workers=4):
     return Word2Vec(sentences, size=emb_size, window=window, min_count=min_count, workers=workers)
 def get_emb(emb_type, kargs):
+    print("Build embedding model ...")
     if emb_type == 'generate':
         return _get_emb_from_train(**kargs)
     else:
@@ -60,6 +61,7 @@ def get_emb(emb_type, kargs):
 
 
 def dump_to_file(word_index, model, filename):
+    print("Writing embedding to {0} ...".format(filename))
     embedding_index = {}
     for w in word_index.keys():
         vec = model.get(w)
@@ -100,4 +102,4 @@ if __name__ == '__main__':
 
     model = get_emb(cfg["emb_type"], kargs)
     filename = cfg["output_dir"] + "/{0}.{1}.txt".format(cfg["emb_type"], str(cfg["emb_size"]))
-    dump_to_file(word_index, model, cfg["output_emb_file"])
+    dump_to_file(word_index, model, filename)
