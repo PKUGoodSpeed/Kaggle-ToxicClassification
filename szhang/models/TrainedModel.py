@@ -6,7 +6,13 @@ class TrainedModel(object):
     ''' each trained model needs to implement predict method
     '''
 
-    def __init__(self, md):
+    def __init__(self, md = None):
+        self.md = md
+
+    def setModel(self, md):
+        if self.md is not None:
+            raise ValueError("md already set")
+
         self.md = md
 
     def predict(self, test, **kwargs):
@@ -33,7 +39,7 @@ class TrainedModel(object):
             delete = raw_input("Warning: found identical nameKey, overwrite: [y/n]?")
             if delete != 'y' and delete != 'Y':
                 print("aborting")
-                return
+                return mDB
             else:
                 mDB = mDB[mDB['modelName'] != nameKey]
 
