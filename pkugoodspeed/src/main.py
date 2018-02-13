@@ -53,4 +53,5 @@ if __name__ == '__main__':
         test = make_predict(model, test, target)
 
     test = test[['id'] + target_list]
-    test.to_csv("test.csv", index=False)
+    sub_file = "{0}_sum.csv".format(cfg['model_name'])
+    test.to_csv(sub_file, index=False)
