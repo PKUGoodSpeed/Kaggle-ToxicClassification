@@ -100,6 +100,7 @@ if __name__ == '__main__':
         assert cfg["emb_size"] == kargs["emb_size"]
 
     model = get_emb(cfg["emb_type"], kargs)
-    print len(model.wv['word'])
+    cfg["emb_size"] = len(model.wv['word'])
+    print cfg["emb_size"]
     filename = cfg["output_dir"] + "/{0}.{1}.txt".format(cfg["emb_type"], str(cfg["emb_size"]))
     dump_to_file(word_index, model, filename)
