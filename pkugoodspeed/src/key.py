@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import time
 
 ref = "1234567890qwertyuiopasdfghjklzxcvbnm "
 def _process(sent):
@@ -26,17 +27,30 @@ def _get_keyphrase(label, filepath="../data/keywords"):
     return key_phrases
 
 
-def get_key_word_features(df, label, keypath="../data/keywords"):
+def get_key_word_features(df, label, vec_size=128, keypath="../data/keywords"):
     print("Building Key Word Embedding Feature ...")
-    key_words = _get_keywords(label=label, filepath=keypath)
-    keyword_vec = np.zeros((len(df), len(key_words)))
-    for i in range(len(df)):
-        for j in range(len(key_words)):
-            if key_words[j] in df.comment_text.values[i]:
-                keyword_vec[i][j] = 1.
+    start_time = time.time()
+    key_words = _get_keywords(label=label, filepath=keypath)[: vec_size]
+    print("Got key_words!")
+    keyword_vec = []
+    for sentence in df.comment_text.values:
+        keyword_vec.append([int(w in sentence) for w in key_words])
     df['keyword_vec'] = keyword_vec
+    print("Time for extracting key word feature: " + str(time.time() - start_time) + " sec")
     return df
-                
+
+
+def get_key_phrase_features(df, label, vec_size=128, keypath="../data/keywords"):
+    print("Building Key Phrase Embedding Feature ...")
+    start_time = time.time()
+    key_phrases = _get_keyphrase(label=label, filepath=keypath)[: vec_size]
+    print("Got key_phrases!")
+    keyphra_vec = []
+    for sentence in df.comment_text.values:
+        keyphra_vec.append([int(w in sentence) for w in key_phrases])
+    df['keyphra_vec'] = keyphra_vec
+    print("Time for extracting key phrase feature: ", str(time.time() - start_time), " sec")
+    return df          
     
 
 
@@ -49,6 +63,7 @@ def _test():
     print kp[:10]
     df = pd.read_csv('../data/train_processed.csv')
     df = get_key_word_features(df, label='toxic')
+    df = get_key_phrase_features(df, label='toxic')
     print df[:3]
 
 
