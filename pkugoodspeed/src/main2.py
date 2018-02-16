@@ -43,8 +43,8 @@ if __name__ == '__main__':
         "max_features": cfg["max_features"],
         "emb_size": cfg["emb_size"],
         "emb_weights": embedding_matrix,
-        "kw_dims": [128, 256, 32],
-        "kp_dim": [128, 256, 32]
+        "kw_dims": [128, 1024, 32],
+        "kp_dim": [128, 1024, 32]
     }, **cfg["model_kargs"]["kargs"])
     # model = keras_model.getModel(model_type, **kargs)
     model = keras_model.getCombinedModel(**kargs)
