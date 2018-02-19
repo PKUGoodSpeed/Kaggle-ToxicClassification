@@ -82,13 +82,23 @@ class Test_FeatureExtractor(unittest.TestCase):
 
         print("Exracted feature shape {}".format(feature.shape))
 
+    def test_covarianceShiftCorrection(self):
+
+        term_doc = self.fe.tfIdf(pd.concat([self.train, self.test]), 'comment_text')
+        trn_term_doc = term_doc.tocsr()[0:len(self.train), :]
+        test_term_doc = term_doc.tocsr()[len(self.train)::, :]
+
+        trn_weights = self.fe.covarianceShiftCorrection(trn_term_doc, test_term_doc)
+        df = pd.DataFrame({'w': trn_weights})
+        print(df.describe())
 
 
 
 if __name__ == "__main__":
     suite = unittest.TestSuite()
     #suite.addTest(Test_FeatureExtractor('test_tfKeyword'))
-    suite.addTest(Test_FeatureExtractor('test_tfKeywordEnsemble'))
+    #suite.addTest(Test_FeatureExtractor('test_tfKeywordEnsemble'))
+    suite.addTest(Test_FeatureExtractor('test_covarianceShiftCorrection'))
 
     unittest.TextTestRunner(verbosity = 2).run(suite)
 

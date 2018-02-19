@@ -147,3 +147,37 @@ class FeatureExtraction(object):
             reSample, reLabel = shuffle(reSample, reLabel, random_state=0)
 
         return reSample, reLabel
+
+
+    def covarianceShiftCorrection(self, trn_term_doc, test_term_doc):
+        ''' compute weights to weight training sample based on probability that it comes from
+            same distribution with test data
+        :term_doc: feature matrix containing both train and test
+        :label: 0 for samples from test set, 1 for samples from training set
+        '''
+        print("covarianceShiftCorrection")
+        from sklearn.linear_model import LogisticRegression
+
+        #print ("feature shape = {}".format(trn_term_doc.shape))
+        trn_label = np.zeros(trn_term_doc.shape[0]).reshape(-1,1)
+        test_label = np.ones(test_term_doc.shape[0]).reshape(-1,1)
+        label = np.vstack([trn_label, test_label]).reshape(1,-1)[0]
+        term_doc = scipy.sparse.vstack([trn_term_doc, test_term_doc])
+        assert(len(label) == term_doc.shape[0])
+
+        #shuffle
+        from sklearn.utils import shuffle
+        term_doc_re, label_re= shuffle(term_doc, label, random_state=0)
+
+        clf = LogisticRegression(penalty="l2", dual=True,
+                   tol=0.0001, C=1, fit_intercept=True, intercept_scaling=1,
+                   class_weight=None, random_state=32,
+                   max_iter=200, verbose=0,
+                   warm_start=False, n_jobs=1)
+
+        clf.fit(term_doc_re, label_re)
+        trn_proba = clf.predict_proba(trn_term_doc)
+        #trn_weights = np.exp(trn_proba)
+        trn_weights = np.array(zip(*trn_proba)[1]) / np.array(zip(*trn_proba)[0])
+        trn_weights = np.clip(trn_weights, 1e-12, 200)
+        return trn_weights
