@@ -1,0 +1,10 @@
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic11.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic12.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic13.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic14.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic15.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic16.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic17.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic18.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic19.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic20.cfg
