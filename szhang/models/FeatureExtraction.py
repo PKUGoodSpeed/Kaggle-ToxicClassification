@@ -15,17 +15,55 @@ class FeatureExtraction(object):
 
         assert(COMMENT in df.columns)
 
-        re_tok = re.compile('([' + string.punctuation + '“”¨«»®´·º½¾¿¡§£₤‘’])')
+        #re_tok = re.compile('([' + string.punctuation + '“”¨«»®´·º½¾¿¡§£₤‘’])')
 
-        def tokenize(s): return re_tok.sub(r' \1 ', s).split()
+        #def tokenize(s): return re_tok.sub(r' \1 ', s).split()
 
-        vec = TfidfVectorizer(ngram_range=(1,2), tokenizer=tokenize,
-               min_df=3, max_df=0.9, strip_accents='unicode', use_idf=1,
-               smooth_idf=1, sublinear_tf=1 )
+        #vec = TfidfVectorizer(ngram_range=(1,2), tokenizer=tokenize,
+        #       lowercase = False,
+        #       min_df=3, max_df=0.9, strip_accents='unicode', use_idf=1,
+        #       smooth_idf=1, sublinear_tf=1 )
 
-        doc = vec.fit_transform(df[COMMENT])
+        self.vec = TfidfVectorizer(
+            sublinear_tf=True,
+            strip_accents='unicode',
+            analyzer='word',
+            token_pattern=r'\w{1,}',
+            stop_words='english',
+            ngram_range=(1, 2),
+            max_features=20000)
+
+        doc = self.vec.fit_transform(df[COMMENT])
 
         return doc
+
+    def tfIdf_charNGram(self, df, n_feature, COMMENT = 'comment_text'):
+        assert(COMMENT in df.columns)
+
+        #re_tok = re.compile('([' + string.punctuation + '“”¨«»®´·º½¾¿¡§£₤‘’])')
+
+        #def tokenize(s): return re_tok.sub(r' \1 ', s).split()
+
+        #self.tfidf_ngram_vec = TfidfVectorizer(ngram_range=(2,6),
+        #       analyzer = 'char',
+        #       max_features = n_feature,
+        #       tokenizer=tokenize,
+        #       min_df=3, max_df=0.9, strip_accents='unicode', use_idf=1,
+        #       lowercase = False,
+        #       smooth_idf=1, sublinear_tf=1 )
+
+        self.tfidf_ngram_vec = TfidfVectorizer(
+            sublinear_tf=True,
+            strip_accents='unicode',
+            analyzer='char',
+            stop_words='english',
+            #lowercase = False,
+            ngram_range=(2, 6),
+            max_features=30000)
+
+        doc = self.tfidf_ngram_vec.fit_transform(df[COMMENT])
+        return doc
+
 
     def tf(self, df, n_feature, COMMENT = 'comment_text'):
 
@@ -36,9 +74,29 @@ class FeatureExtraction(object):
         def tokenize(s): return re_tok.sub(r' \1 ', s).split()
 
         self.tf_vec = CountVectorizer(ngram_range=(1,2), tokenizer=tokenize,
-               min_df=3, max_df=0.9, strip_accents='unicode', max_features = n_feature, stop_words = 'english')
+               lowercase = False,
+               min_df=3, max_df=0.9, strip_accents='unicode',
+               max_features = n_feature, stop_words = 'english')
 
         doc = self.tf_vec.fit_transform(df[COMMENT])
+
+        return doc
+
+    def charNGram(self, df, n_feature, COMMENT = 'comment_text'):
+
+        assert(COMMENT in df.columns)
+
+        #re_tok = re.compile('([' + string.punctuation + '“”¨«»®´·º½¾¿¡§£₤‘’])')
+
+        #def tokenize(s): return re_tok.sub(r' \1 ', s).split()
+
+        self.tfngram_vec = CountVectorizer(ngram_range=(3,5),
+                analyzer = 'char',
+                min_df=3, max_df=0.9,
+                lowercase = False,
+                strip_accents='unicode', max_features = n_feature, stop_words = 'english')
+
+        doc = self.tfngram_vec.fit_transform(df[COMMENT])
 
         return doc
 
