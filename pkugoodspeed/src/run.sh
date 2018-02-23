@@ -1,6 +1,7 @@
-python main.py --train ../data/train_processed.csv --test ../data/train_processed.csv --config cfgs/seq_cnnx2_emb.cfg
-python main.py --train ../data/train_processed.csv --test ../data/train_processed.csv --config cfgs/seq_cnnx3_emb.cfg
-python main.py --train ../data/train_processed.csv --test ../data/train_processed.csv --config cfgs/seq_grux1_emb.cfg
-python main.py --train ../data/train_processed.csv --test ../data/train_processed.csv --config cfgs/seq_grux2_emb.cfg
-python main.py --train ../data/train_processed.csv --test ../data/train_processed.csv --config cfgs/seq_lstmx1_emb.cfg
-python main.py --train ../data/train_processed.csv --test ../data/train_processed.csv --config cfgs/seq_lstmx2_emb.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic03.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic05.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic06.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic07.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic08.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic09.cfg
+python main.py --train ../data/train_processed.csv --test ../data/test_processed.csv --config cfgs/toxic10.cfg

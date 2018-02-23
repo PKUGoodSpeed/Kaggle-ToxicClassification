@@ -35,10 +35,8 @@ def embProcess(train_df, test_df, target_list=['toxic'], split_ratio=0.7, expand
     train, valid = train_test_split(train_df, train_size=split_ratio)
     train = _makeBalance(train, target_list, expand_ratio)
     valid = _makeBalance(valid, target_list, expand_ratio)
-    train_x = pad_sequences(train.seq, maxlen=padlength)
-    valid_x = pad_sequences(valid.seq, maxlen=padlength)
-    train_y = train[target_list].values
-    valid_y = valid[target_list].values
+    train['input'] = list(pad_sequences(train.seq, maxlen=padlength))
+    valid['input'] = list(pad_sequences(valid.seq, maxlen=padlength))
     test_df['input'] = list(pad_sequences(test_df.seq, maxlen=padlength))
     
     ### Build embedding matrix
@@ -55,4 +53,4 @@ def embProcess(train_df, test_df, target_list=['toxic'], split_ratio=0.7, expand
             embedding_vector = embedding_index.get(word)
             if embedding_vector is not None: 
                 embedding_matrix[i] = embedding_vector
-    return train_x, train_y, valid_x, valid_y, test_df[['id','input']], embedding_matrix
+    return train, valid, test_df, embedding_matrix

@@ -2,6 +2,7 @@
 Constructing keras models
 '''
 ## Math and dataFrame
+import os
 import numpy as np
 import pandas as pd
 import plot
@@ -15,7 +16,7 @@ from sklearn.preprocessing import LabelBinarizer
 ## Keras
 from keras.models import Model, Sequential
 from keras.optimizers import SGD, Adam
-from keras.callbacks import LearningRateScheduler, Callback
+from keras.callbacks import LearningRateScheduler, Callback, EarlyStopping, ModelCheckpoint
 from keras.layers import Embedding, Flatten, Conv1D, Conv2D, GRU, LSTM, SimpleRNN, MaxPooling1D
 from keras.layers import Input, Dropout, Dense, BatchNormalization, Activation, concatenate
 from keras.layers import GlobalMaxPooling1D, GlobalAveragePooling1D, AveragePooling1D
@@ -117,8 +118,12 @@ class KerasModel:
             self._buildParaModel(**kargs)
         return self._model
 
-    def train(self, train_x, train_y, valid_x, valid_y, optimizer='sgd', learning_rate=0.02, 
+    def train(self, train, valid, target_list, optimizer='sgd', learning_rate=0.02, 
     decay_rate=0.85, epochs=36, adaptive_step=2, loss='binary_crossentropy', metrics=None):
+        train_x = np.array(train.input.tolist())
+        valid_x = np.array(valid.input.tolist())
+        train_y = train[target_list].values
+        valid_y = valid[target_list].values
         global global_learning_rate
         global global_decay_rate
         global_learning_rate = learning_rate
@@ -134,13 +139,117 @@ class KerasModel:
             return global_learning_rate
         change_lr = LearningRateScheduler(scheduler)
 
+        earlystopper = EarlyStopping(patience=5, verbose=1)
+        if not os.path.exists('./checkpoints'):
+            os.system('mkdir checkpoints')
+        checkpointer = ModelCheckpoint(filepath='./checkpoints/weights.h5', verbose=1, save_best_only=True)
+
         ## Compile the model
         self._model.compile(optimizer=optmap[optimizer](learning_rate), loss=loss, metrics=metrics)
         
         self._history = self._model.fit(train_x, train_y, batch_size=128, epochs=epochs,
-        verbose=1, validation_data=(valid_x, valid_y), callbacks=[change_lr])
+        verbose=1, validation_data=(valid_x, valid_y), callbacks=[earlystopper, checkpointer, change_lr])
+        self._model.load_weights("./checkpoints/weights.h5")
         return self._history
     
     def plot(self, filename='convergence.png'):
         '''Plot the convergence behavior'''
         plot.plotResult(self._history, filename=filename)
+
+    def make_predict(self, test, target_list):
+        test_x = np.array(test.input.tolist())
+        for target in target_list:
+            test[target] = [0]*len(test)
+        test[target_list] = self._model.predict(test_x, batch_size=128)
+        return test
+
+
+    def getCombinedModel(self, layer_list, max_features=20000, emb_size=100, 
+    emb_weights=None, bidirect=False, kw_dims=[64, 256, 32], kp_dim=[64, 256, 32]):
+        '''Building a sequential model'''
+        input_layer = Input(shape=self._input_shape, name='input')
+        tmp = input_layer
+        if emb_weights is None:
+            tmp = Embedding(max_features, emb_size) (tmp)
+        else:
+            tmp = Embedding(max_features, emb_size, weights=[emb_weights]) (tmp)
+        for layer in layer_list:
+            assert layer['name'] in layermap, "Layer {0} does not exist, you can invent one :)".format(layer['name'])
+            if bidirect and layer['name'] in ['lstm', 'gru']:
+                tmp = Bidirectional(layermap[layer['name']](*layer['args'], **layer['kargs'])) (tmp)
+            else:
+                tmp = layermap[layer['name']](*layer['args'], **layer['kargs']) (tmp)
+        ## Adding keywords and keyphrases vectorized features
+        assert len(kw_dims) > 1 and len(kp_dim) > 1, "Should have at least one hidden layer for key vectors"
+        keyword_layer = Input(shape=[kw_dims[0]], name='keywords')
+        kw = keyword_layer
+        for neuron in kw_dims[1:]:
+            kw = Dropout(0.3) (Dense(neuron, activation='sigmoid') (kw))
+        
+        keyphra_layer = Input(shape=[kp_dim[0]], name='keyphrases')
+        kp = keyphra_layer
+        for neuron in kp_dim[1:]:
+            kp = Dropout(0.3) (Dense(neuron, activation='sigmoid') (kp))
+        
+        main_layer = concatenate([tmp, kw, kp])
+        main_layer = Dropout(0.5) (Dense(128, activation='relu') (main_layer))
+        output_layer = Dense(self._output_dim, activation='sigmoid') (main_layer)
+        print "Finish loading layers."
+        self._model = Model([input_layer, keyword_layer, keyphra_layer], output_layer)
+        return self._model
+    
+    def trainCombinedModel(self, train, valid, target_list, optimizer='sgd', learning_rate=0.02, 
+    decay_rate=0.85, epochs=36, adaptive_step=2, loss='binary_crossentropy', metrics=None):
+        train_x = {
+            'input': np.array(train.input.tolist()),
+            'keywords': np.array(train.keyword_vec.tolist()),
+            'keyphrases': np.array(train.keyphra_vec.tolist())
+        }
+        print train_x['input'].shape
+        print train_x['keywords'].shape
+        print train_x['keyphrases'].shape
+        valid_x = {
+            'input': np.array(valid.input.tolist()),
+            'keywords': np.array(valid.keyword_vec.tolist()),
+            'keyphrases': np.array(valid.keyphra_vec.tolist())
+        }
+        train_y = train[target_list].values
+        valid_y = valid[target_list].values
+        global global_learning_rate
+        global global_decay_rate
+        global_learning_rate = learning_rate
+        global_decay_rate = decay_rate
+        assert optimizer in optmap, "Wrong optimizer name"
+        ## Using adaptive decaying learning rate
+        def scheduler(epoch):
+            global global_learning_rate
+            global global_decay_rate
+            if epoch%adaptive_step == 0:
+                global_learning_rate *= global_decay_rate
+                print("CURRENT LEARNING RATE = " + str(global_learning_rate))
+            return global_learning_rate
+        change_lr = LearningRateScheduler(scheduler)
+        earlystopper = EarlyStopping(patience=5, verbose=1)
+        if not os.path.exists('./checkpoints'):
+            os.system('mkdir checkpoints')
+        checkpointer = ModelCheckpoint(filepath='./checkpoints/weights.h5', verbose=1, save_best_only=True)
+
+        ## Compile the model
+        self._model.compile(optimizer=optmap[optimizer](learning_rate), loss=loss, metrics=metrics)
+        
+        self._history = self._model.fit(train_x, train_y, batch_size=128, epochs=epochs,
+        verbose=1, validation_data=(valid_x, valid_y), callbacks=[earlystopper, checkpointer, change_lr])
+        self._model.load_weights("./checkpoints/weights.h5")
+        return self._history
+
+    def predictCombinedModel(self, test, target_list):
+        test_x = {
+            'input': np.array(test.input.tolist()),
+            'keywords': np.array(test.keyword_vec.tolist()),
+            'keyphrases': np.array(test.keyphra_vec.tolist())
+        }
+        for target in target_list:
+            test[target] = [0]*len(test)
+        test[target_list] = self._model.predict(test_x, batch_size=128)
+        return test
+        

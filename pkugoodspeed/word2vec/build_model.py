@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import sys
 sys.path.append("../src")
+## Tokenizer
+from keras.preprocessing.text import Tokenizer
 ## fast text or word2vec
 import gensim
 from gensim.models import Word2Vec
@@ -32,8 +34,47 @@ def get_key_sentences(path):
     return extra_sent
 
 
+def get_word_index(train_data_file, test_data_file, key_path):
+    train = pd.read_csv(train_data_file)
+    test = pd.read_csv(test_data_file)
+    extra = np.array(get_key_sentences(key_path))
+    raw_text = np.hstack([train.comment_text.str.lower(), test.comment_text.str.lower(), extra])
+    tok_raw = Tokenizer()
+    tok_raw.fit_on_texts(raw_text)
+    return tok_raw.word_index
+
+
 def _get_sentences(s):
     return s.lower().split()
+
+
+def _get_emb_from_file(model_file, binary=False):
+    return gensim.models.KeyedVectors.load_word2vec_format(model_file, binary=binary)
+def _get_emb_from_train(sentences, emb_size=100, window=5, min_count=1, workers=4):
+    return Word2Vec(sentences, size=emb_size, window=window, min_count=min_count, workers=workers)
+def get_emb(emb_type, kargs):
+    print("Build embedding model ...")
+    if emb_type == 'generate':
+        return _get_emb_from_train(**kargs)
+    else:
+        return _get_emb_from_file(**kargs)
+
+
+def dump_to_file(word_index, model, filename):
+    print("Writing embedding to {0} ...".format(filename))
+    embedding_index = {}
+    for w in word_index.keys():
+        if w in model.wv.vocab:
+            embedding_index[w] = model.wv[w]
+    
+    fp = open(filename, 'w')
+    for word, vec in embedding_index.items():
+        fp.write(word)
+        for x in vec:
+            fp.write(' '+str(x))
+        fp.write('\n')
+    fp.close()
+
 
 
 if __name__ == '__main__':
@@ -43,29 +84,23 @@ if __name__ == '__main__':
     
     ## Read From Config file
     cfg = json.load(open(config_file))
-    print cfg
-    path = cfg["path"]
-    extra = cfg["extra"]
-    vec_size = cfg["vec_size"]
-    window = cfg['window']
-    min_count = cfg["min_count"]
-    workers = cfg["workers"]
-    
-    key_words_phrase = []
-    if extra:
-        key_words_phrase = get_key_sentences(path)
-    
-    pool=Pool(4)
-    train_sents = pool.map(_get_sentences, train.comment_text.str.lower())
-    test_sents = pool.map(_get_sentences, test.comment_text.str.lower())
-    key_sents = pool.map(_get_sentences, key_words_phrase)
-    pool.close()
-    pool.join()
-    
-    sentences = train_sents+test_sents+key_sents
-    model = Word2Vec(sentences, size=vec_size, window=window, min_count=min_count, workers=workers)
-    filename = "toxic"
-    if extra:
-        filename += "_key"
-    filename += "_{0}_{1}_{2}.txt".format(str(vec_size), str(window), str(min_count))
-    model.save("data/" + filename)
+    key_path = cfg["key_path"]
+    word_index = get_word_index(train_data_file, test_data_file, key_path)
+
+    kargs = cfg["kargs"]
+    if cfg["emb_type"] == "generate":
+        key_words_phrase = get_key_sentences(key_path)
+        pool=Pool(4)
+        train_sents = pool.map(_get_sentences, train.comment_text.str.lower())
+        test_sents = pool.map(_get_sentences, test.comment_text.str.lower())
+        key_sents = pool.map(_get_sentences, key_words_phrase)
+        pool.close()
+        pool.join()
+        kargs["sentences"] = train_sents+test_sents+key_sents
+        assert cfg["emb_size"] == kargs["emb_size"]
+
+    model = get_emb(cfg["emb_type"], kargs)
+    cfg["emb_size"] = len(model.wv['word'])
+    print cfg["emb_size"]
+    filename = cfg["output_dir"] + "/{0}.{1}.txt".format(cfg["emb_type"], str(cfg["emb_size"]))
+    dump_to_file(word_index, model, filename)
