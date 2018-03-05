@@ -119,7 +119,8 @@ class KerasModel:
         return self._model
 
     def train(self, train, valid, target_list, optimizer='sgd', learning_rate=0.02, 
-    decay_rate=0.85, epochs=36, adaptive_step=2, loss='binary_crossentropy', metrics=None):
+    decay_rate=0.85, epochs=36, adaptive_step=2, loss='binary_crossentropy', metrics=None,
+    check_file='weights.h5'):
         train_x = np.array(train.input.tolist())
         valid_x = np.array(valid.input.tolist())
         train_y = train[target_list].values
@@ -142,14 +143,14 @@ class KerasModel:
         earlystopper = EarlyStopping(monitor='val_acc', patience=5, mode='max', verbose=1)
         if not os.path.exists('./checkpoints'):
             os.system('mkdir checkpoints')
-        checkpointer = ModelCheckpoint(filepath='./checkpoints/weights.h5', monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+        checkpointer = ModelCheckpoint(filepath='./checkpoints/'+check_file, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
 
         ## Compile the model
         self._model.compile(optimizer=optmap[optimizer](learning_rate), loss=loss, metrics=metrics)
         
         self._history = self._model.fit(train_x, train_y, batch_size=128, epochs=epochs,
         verbose=1, validation_data=(valid_x, valid_y), callbacks=[earlystopper, checkpointer, change_lr])
-        self._model.load_weights("./checkpoints/weights.h5")
+        self._model.load_weights("./checkpoints/"+check_file)
         return self._history
     
     def plot(self, filename='convergence.png'):
@@ -199,7 +200,8 @@ class KerasModel:
         return self._model
     
     def trainCombinedModel(self, train, valid, target_list, optimizer='sgd', learning_rate=0.02, 
-    decay_rate=0.85, epochs=36, adaptive_step=2, loss='binary_crossentropy', metrics=None):
+    decay_rate=0.85, epochs=36, adaptive_step=2, loss='binary_crossentropy', metrics=None,
+    check_file='weights.h5'):
         train_x = {
             'input': np.array(train.input.tolist()),
             'keywords': np.array(train.keyword_vec.tolist()),
@@ -232,14 +234,14 @@ class KerasModel:
         earlystopper = EarlyStopping(patience=5, verbose=1)
         if not os.path.exists('./checkpoints'):
             os.system('mkdir checkpoints')
-        checkpointer = ModelCheckpoint(filepath='./checkpoints/weights.h5', verbose=1, save_best_only=True)
+        checkpointer = ModelCheckpoint(filepath='./checkpoints/'+check_file, verbose=1, save_best_only=True)
 
         ## Compile the model
         self._model.compile(optimizer=optmap[optimizer](learning_rate), loss=loss, metrics=metrics)
         
         self._history = self._model.fit(train_x, train_y, batch_size=128, epochs=epochs,
         verbose=1, validation_data=(valid_x, valid_y), callbacks=[earlystopper, checkpointer, change_lr])
-        self._model.load_weights("./checkpoints/weights.h5")
+        self._model.load_weights("./checkpoints/"+check_file)
         return self._history
 
     def predictCombinedModel(self, test, target_list):

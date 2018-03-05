@@ -39,6 +39,7 @@ if __name__ == '__main__':
     }, **cfg["model_kargs"]["kargs"])
     model = keras_model.getModel(model_type, **kargs)
     model.summary()
+    cfg["train_kargs"]["check_file"] = cfg['model_name']+".h5"
     history = keras_model.train(train, valid, target_list, **cfg["train_kargs"])
     
     output_file="{0}_{1}_convergence.png".format(cfg['model_name'], '.'.join(cfg["preprc_kargs"]["target_list"]))
