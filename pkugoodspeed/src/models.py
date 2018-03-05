@@ -139,10 +139,10 @@ class KerasModel:
             return global_learning_rate
         change_lr = LearningRateScheduler(scheduler)
 
-        earlystopper = EarlyStopping(patience=5, verbose=1)
+        earlystopper = EarlyStopping(monitor='val_acc', patience=5, mode='max', verbose=1)
         if not os.path.exists('./checkpoints'):
             os.system('mkdir checkpoints')
-        checkpointer = ModelCheckpoint(filepath='./checkpoints/weights.h5', verbose=1, save_best_only=True)
+        checkpointer = ModelCheckpoint(filepath='./checkpoints/weights.h5', monitor='val_acc', verbose=1, save_best_only=True, mode='max')
 
         ## Compile the model
         self._model.compile(optimizer=optmap[optimizer](learning_rate), loss=loss, metrics=metrics)
